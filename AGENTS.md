@@ -1,8 +1,11 @@
 # AGENTS.md
 
 Guidance for OpenCode when working in this repository. Deeper material lives in
-`README.md` (usage, development, debugging) and `HANDOFF.md` (current state and
-next steps).
+`README.md` (usage, development, debugging), `HANDOFF.md` (current state and
+next steps) and `GETTING-STARTED.md` (first run on a new machine).
+
+**On a machine where the extension is not set up yet**, follow
+`GETTING-STARTED.md` and run `tools/bootstrap.sh` before anything else.
 
 ## What this is
 
