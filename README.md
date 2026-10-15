@@ -20,9 +20,17 @@ feeds the **Power → Connected Devices** section in GNOME Settings.
 
 ## Requirements
 
+Runtime:
+
 - GNOME Shell 49
 - BlueZ exposing the mouse as `org.bluez.Device1` with `Icon = input-mouse` and
   a `org.bluez.Battery1` battery
+
+Development only (used to test changes without logging out):
+
+- `mutter-devel` (Fedora 43) or `mutter-devkit` (newer Fedora) — the Mutter
+  Development Kit viewer at `/usr/libexec/mutter-devkit`
+- `gdbus`, `busctl`, `python3` and `gjs`
 
 ## Install (from source)
 
@@ -42,77 +50,186 @@ gnome-extensions enable bluetooth-mouse-battery@manuelamr
 ## Layout
 
 - `extension.js` — entry point, only `enable()` / `disable()`.
-- `indicator.js` — panel indicator and menu (shell process UI).
+- `indicator.js` — panel indicator, menu and tooltip (Shell process UI).
 - `lib/bluez.js` — BlueZ D-Bus access, no UI imports.
-- `tools/` — development helpers, not loaded by GNOME Shell.
+- `tools/gnome-shell-dev` — launches a disposable nested GNOME Shell.
+- `tools/check-extension.sh` — loads the extension in a nested Shell and reports
+  its state over D-Bus.
 
-## Debugging
+Everything under `tools/` is development-only and is never loaded by GNOME Shell.
+
+## Development
+
+### Why there is no hot reload
+
+GNOME Shell imports every extension module once and never unloads JavaScript.
+Editing these files therefore has no effect on the running Shell: a **new
+`gnome-shell` process** is required to read the code from disk again. On Wayland
+the running Shell *is* the compositor, so it cannot be restarted in place, and
+the classic Alt+F2 `r` restart does not exist. Without help, the only way to
+reload is to log out and back in.
+
+### The Mutter DevKit (review without logging out)
+
+GNOME 49 removed the old `--nested` flag and replaced it with the **Mutter
+Development Kit**. `gnome-shell --devkit` starts a *nested* GNOME Shell — a full
+Shell running as a client of your real session — and hands its output to the
+devkit viewer, a GTK window. Mutter spawns the viewer from the hard-coded path
+`/usr/libexec/mutter-devkit` and exposes it on D-Bus as `org.gnome.Mutter.Devkit`
+(app id `org.gnome.Mutter.Mdk`).
+
+Because the nested Shell runs with your `$HOME`, it uses the same extension
+directory (`~/.local/share/gnome-shell/extensions`) and the same dconf
+`enabled-extensions` list as your real session. The extension under development
+is therefore loaded exactly as it will be after a real login — you just get a
+fresh process, and a throwaway one, every time.
+
+#### Install the viewer
+
+On Fedora 43 `/usr/libexec/mutter-devkit` is shipped by `mutter-devel`; newer
+Fedora has a dedicated `mutter-devkit` package:
 
 ```sh
-journalctl --user -f -o cat | grep -i 'mouse-battery'
+sudo dnf install mutter-devel     # Fedora 43
+sudo dnf install mutter-devkit    # newer Fedora
 ```
 
-## Developing (no hot reload)
+The launcher below checks for the binary and tells you if it is missing.
 
-GNOME Shell cannot unload JavaScript once imported, so editing these files has
-no effect until a new `gnome-shell` process starts. On Wayland the running Shell
-(the compositor) cannot be restarted in place, so log out and back in.
-
-To iterate faster, run an isolated development Shell that you can restart
-freely. Since GNOME 49 the previous `--nested` flag was replaced by the Mutter
-Development Kit.
-
-### Setup
-
-The devkit viewer is `/usr/libexec/mutter-devkit`, shipped by `mutter-devel`:
+#### Launch
 
 ```sh
-sudo dnf install mutter-devel
+tools/gnome-shell-dev
 ```
 
-### Usage
-
-```sh
-gnome-shell-dev
-```
-
-`tools/gnome-shell-dev` runs `dbus-run-session gnome-shell --wayland --devkit`.
-It opens a window with a nested GNOME Shell that uses your same `$HOME`, so it
-loads the extensions and settings of your real session. To call it from
-anywhere, install it on your `PATH`:
+Optionally put it on your `PATH` and call it by name:
 
 ```sh
 ln -sf "$PWD/tools/gnome-shell-dev" ~/.local/bin/gnome-shell-dev
+gnome-shell-dev
 ```
 
-To apply changes: edit the files, close the nested window (or `Ctrl+C`) and run
-the script again. Every run is a fresh `gnome-shell` process that reads the code
-from disk. Startup takes a while (it is a full Shell), and the nested Shell does
-not always receive keyboard shortcuts — use on-screen input or the mouse.
-
-Equivalent command, without the helper (GNOME 49+):
+The script is a thin wrapper around:
 
 ```sh
-dbus-run-session gnome-shell --devkit --wayland
+dbus-run-session gnome-shell --wayland --devkit
 ```
+
+`dbus-run-session` gives the nested Shell a **private session bus**, so it does
+not fight with your real session. The extension still talks to the **system**
+bus for BlueZ, which is shared.
+
+#### Iteration cycle
+
+1. Edit the files.
+2. Close the nested window (or `Ctrl+C` in the terminal).
+3. Run `tools/gnome-shell-dev` again.
+
+Every run is a brand-new `gnome-shell` process, so every change is picked up.
+
+Caveats:
+
+- Startup is slow because it is a full Shell: expect ~20–30 s, ending with a
+  `GNOME Shell started at …` line in the terminal.
+- The nested Shell does not always receive keyboard input, so use the mouse for
+  panel and menu interaction.
+- It really is a full Shell: it starts portals, the calendar server, and so on.
+  Warnings from those (accessibility bus, secrets) are unrelated to the
+  extension and harmless in this context.
 
 ### Checking that the extension loaded
 
-`tools/check-extension.sh` launches an isolated nested Shell with its own D-Bus
-session, waits for it, and prints the extension state and any load errors:
+`tools/check-extension.sh` starts a nested Shell with its own D-Bus session,
+waits for it, then prints the extension info and any load errors:
 
 ```sh
 tools/check-extension.sh
 ```
 
-A healthy extension reports `'state': <1.0>` (enabled), `'enabled': <true>` and
-`'error': <''>`. Any other `state`, or a non-empty `error`, means it failed to
-load.
+Healthy output contains `'state': <1.0>`, `'enabled': <true>` and
+`'error': <''>`, with `GetExtensionErrors` returning an empty array.
 
-Alternatively, while `gnome-shell-dev` is already running, query its D-Bus:
+`state` values (GNOME Shell 49, `js/misc/extensionUtils.js`):
+
+| Value | State        | Meaning                        |
+|-------|--------------|--------------------------------|
+| 1     | ACTIVE       | loaded and running (healthy)   |
+| 2     | INACTIVE     | disabled                       |
+| 3     | ERROR        | failed to load; see the errors |
+| 4     | OUT_OF_DATE  | `shell-version` does not match |
+| 5     | DOWNLOADING  | being downloaded               |
+| 6     | INITIALIZED  | scanned but not enabled        |
+| 7     | DEACTIVATING | shutting down                  |
+| 8     | ACTIVATING   | starting up                    |
+| 99    | UNINSTALLED  | unknown extension              |
+
+While the extension is loaded in your **real** session, you can query the same
+interface on the session bus:
 
 ```sh
 gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
     --method org.gnome.Shell.Extensions.GetExtensionInfo \
     bluetooth-mouse-battery@manuelamr
 ```
+
+This does not reach the nested Shell, which runs on its own private bus; that is
+exactly why `tools/check-extension.sh` exists.
+
+### Debugging
+
+#### Logs
+
+Real session:
+
+```sh
+journalctl --user -f -o cat | grep -iE 'mouse-battery|JS ERROR'
+```
+
+Nested Shell: its output goes to the terminal that runs `gnome-shell-dev`. To
+include GLib/GJS debug messages:
+
+```sh
+G_MESSAGES_DEBUG=all tools/gnome-shell-dev
+```
+
+`tools/check-extension.sh` writes the nested Shell log to
+`${TMPDIR:-/tmp}/gnome-shell-dev-check.log`.
+
+#### Inspecting BlueZ
+
+The extension's only data source is BlueZ, so check it directly. The mouse is
+the `org.bluez.Device1` whose `Icon` is `input-mouse`:
+
+```sh
+busctl --system tree org.bluez
+```
+
+```sh
+gjs -c '
+const Gio = imports.gi.Gio;
+const r = Gio.DBus.system.call_sync("org.bluez", "/",
+    "org.freedesktop.DBus.ObjectManager", "GetManagedObjects",
+    null, null, Gio.DBusCallFlags.NONE, -1, null);
+for (const [path, ifaces] of Object.entries(r.recursiveUnpack()[0])) {
+    const d = ifaces["org.bluez.Device1"];
+    if (!d || d.Icon !== "input-mouse")
+        continue;
+    const b = ifaces["org.bluez.Battery1"];
+    print(`${d.Alias} connected=${d.Connected} battery=${b?.Percentage ?? "?"}`);
+}
+'
+```
+
+`lib/bluez.js` uses exactly these interfaces, so running this snippet under `gjs`
+(no Shell involved) is the fastest way to debug the data layer.
+
+#### Troubleshooting
+
+- **Extension missing** from `gnome-extensions list` or from the devkit: the
+  extensions directory is scanned only at startup, so a freshly copied extension
+  needs a new Shell process (the devkit counts).
+- **`state: 3` (ERROR)**: read the message with `GetExtensionErrors`, or run
+  `tools/check-extension.sh`.
+- **Nothing in the panel**: confirm the mouse appears under
+  **Power → Connected Devices** in GNOME Settings, then re-run the BlueZ
+  snippet above.
