@@ -1,0 +1,9 @@
+{
+  "uuid": "bluetooth-mouse-battery@manuelamr",
+  "name": "Mouse Battery",
+  "description": "Shows the battery level of the connected Bluetooth mouse in the top panel.",
+  "shell-version": [
+    "49"
+  ],
+  "url": ""
+}

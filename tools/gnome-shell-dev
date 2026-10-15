@@ -1,0 +1,22 @@
+#!/bin/sh
+# gnome-shell-dev — lanza una GNOME Shell anidada (Mutter DevKit) para probar
+# extensiones sin cerrar sesión.
+#
+# Uso:
+#   gnome-shell-dev
+#
+# Edita los archivos de la extensión, cierra la ventana anidada (o Ctrl+C) y
+# vuelve a ejecutar este script: cada ejecución es un proceso gnome-shell nuevo
+# que recarga el código desde disco.
+#
+# La Shell anidada usa tu mismo HOME, así que carga las extensiones de
+# ~/.local/share/gnome-shell/extensions y la lista de extensiones habilitadas.
+set -eu
+
+if [ ! -x /usr/libexec/mutter-devkit ]; then
+    echo "Falta /usr/libexec/mutter-devkit (paquete 'mutter-devel')." >&2
+    echo "Instálalo con:  sudo dnf install mutter-devel" >&2
+    exit 1
+fi
+
+exec dbus-run-session -- gnome-shell --wayland --devkit "$@"
