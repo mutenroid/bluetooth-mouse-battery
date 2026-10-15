@@ -58,7 +58,7 @@ fi
 
 step "GitHub authentication"
 if ! command -v gh >/dev/null; then
-    warn "gh not installed (only needed to clone/push the private repo)"
+    warn "gh not installed (only needed to push; the repo is public)"
 elif gh auth status >/dev/null 2>&1; then
     ok "gh logged in as $(gh api user --jq .login 2>/dev/null || echo '?')"
     if git config --global --get-regexp 'credential\.https://github\.com' >/dev/null 2>&1; then

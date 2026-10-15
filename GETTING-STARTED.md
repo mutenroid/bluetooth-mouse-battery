@@ -6,23 +6,23 @@ into the extensions path so GNOME Shell finds it, then open OpenCode inside it.
 ## 0. Prerequisites
 
 - Linux with **GNOME Shell 49** on a **Wayland** session
-- `git`, network access, and `gh` (GitHub CLI) for authentication
+- `git` and network access; `gh` (GitHub CLI) only if you want to push
 - BlueZ with the mouse already **paired**
 
-The repository is **private**, so the clone needs authentication.
+The repository is **public**, so the clone needs no authentication. `gh` is only
+needed if you also want to `git push`.
 
-## 1. Authenticate (once per machine)
+## 1. Authenticate (optional, only to push)
+
+Cloning works without credentials. To push, authenticate once per machine:
 
 ```sh
 gh auth login && gh auth setup-git
 ```
 
 `gh auth login` opens a browser device flow. `gh auth setup-git` installs the git
-credential helper; without it `git clone`/`git push` fail trying to prompt for a
-username and password.
-
-If you have an SSH key registered on GitHub you can skip this and use the SSH
-URL in the next step.
+credential helper; without it `git push` fails trying to prompt for a username
+and password.
 
 ## 2. Clone into the exact path GNOME Shell scans
 
@@ -86,7 +86,7 @@ tools/gnome-shell-dev        # nested Shell to test interactively
 
 | Symptom | Cause / fix |
 |---------|-------------|
-| `git clone` asks for username and password | Private repo and no credential helper. Run `gh auth login && gh auth setup-git`, or use SSH. |
+| `git push` asks for username and password | No credential helper. Run `gh auth login && gh auth setup-git`, or use SSH. |
 | `fatal: destination path ... already exists` | A previous copy is there. Move it away first. |
 | Extension not in `gnome-extensions list` | The extensions directory is scanned at startup; log out and back in. |
 | `tools/gnome-shell-dev` says the viewer is missing | Install the DevKit viewer: `sudo dnf install mutter-devel` (Fedora 43) or `mutter-devkit` (newer Fedora). |

@@ -42,7 +42,7 @@ Pendiente de confirmar:
 
 ## 4. Repositorio
 
-- Remoto: `https://github.com/mutenroid/bluetooth-mouse-battery` (**privado**)
+- Remoto: `https://github.com/mutenroid/bluetooth-mouse-battery` (**público**)
 - Ramas: `main` (con tracking `origin/main`)
 - Protocolo git: HTTPS (gestionado por `gh`)
 - Identidad de git: `mutenroid <mutenroid@gmail.com>`

@@ -74,7 +74,7 @@ tools/check-extension.sh   # headless; expects 'state': <1.0> (ACTIVE)
 
 ## Git
 
-- Private repo: `https://github.com/mutenroid/bluetooth-mouse-battery`.
+- Public repo: `https://github.com/mutenroid/bluetooth-mouse-battery`.
 - Commit author on every machine: `mutenroid <mutenroid@gmail.com>`
   (`git config user.name mutenroid`, `git config user.email mutenroid@gmail.com`).
 - Never commit secrets.
