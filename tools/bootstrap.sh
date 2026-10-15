@@ -50,8 +50,8 @@ esac
 step "Git identity"
 if [ -z "$(git -C "$REPO_DIR" config user.email)" ]; then
     git -C "$REPO_DIR" config user.name "mutenroid"
-    git -C "$REPO_DIR" config user.email "mutenroid@gmail.com"
-    ok "local identity set to mutenroid <mutenroid@gmail.com>"
+    git -C "$REPO_DIR" config user.email "1957796+mutenroid@users.noreply.github.com"
+    ok "local identity set to mutenroid <1957796+mutenroid@users.noreply.github.com>"
 else
     ok "already set: $(git -C "$REPO_DIR" config user.email)"
 fi

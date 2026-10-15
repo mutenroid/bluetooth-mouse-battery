@@ -45,7 +45,7 @@ Pendiente de confirmar:
 - Remoto: `https://github.com/mutenroid/bluetooth-mouse-battery` (**público**)
 - Ramas: `main` (con tracking `origin/main`)
 - Protocolo git: HTTPS (gestionado por `gh`)
-- Identidad de git: `mutenroid <mutenroid@gmail.com>`
+- Identidad de git: `mutenroid <1957796+mutenroid@users.noreply.github.com>`
 
 En el equipo de referencia el repo **es** el propio directorio de la extensión:
 
@@ -242,7 +242,7 @@ Requisitos: GNOME Shell **49** en Wayland, BlueZ, y el ratón emparejado.
    ```sh
    cd ~/.local/share/gnome-shell/extensions/bluetooth-mouse-battery@manuelamr
    git config user.name  "mutenroid"
-   git config user.email "mutenroid@gmail.com"
+   git config user.email "1957796+mutenroid@users.noreply.github.com"
    gh auth login
    ```
 
