@@ -1,18 +1,27 @@
-# Mouse Battery
+# Bluetooth Battery
 
-GNOME Shell extension that shows the battery level of the connected Bluetooth
-mouse as a panel indicator: a mouse icon followed by the remaining percentage.
-The indicator is placed in the center of the panel, immediately to the left of
-the date/time.
+GNOME Shell extension that shows the battery level of **every connected
+Bluetooth device** in the top panel: for each device, an icon matching its type
+(mouse, headset, keyboard, gamepad, phone, …) followed by its remaining
+percentage. The indicator is placed in the center of the panel, immediately to
+the left of the date/time.
 
-- **Hover** the icon to see a tooltip with the device name and connection state.
-- **Click** the icon to open a menu with the device name, the connection state
-  and an entry to open the Bluetooth settings panel.
+- **Hover** the indicator to see a tooltip listing every connected device with
+  its battery level.
+- **Click** it to open a menu with one row per connected device (icon, name and
+  battery, or "sin batería" if the device does not report one) and an entry to
+  open the Bluetooth settings panel.
+- **Low battery** (below 15%): the device icon and percentage turn red in the
+  panel and in the menu, and a red `battery-caution` icon is shown at the start
+  of the indicator so it stands out at a glance.
+- With no connected device reporting a battery, the panel shows only the
+  Bluetooth icon.
 
 Device information is read from BlueZ on the system bus
-(`org.bluez`, `org.freedesktop.DBus.ObjectManager`), which lists paired
-Bluetooth devices even while they are disconnected. This is the same source that
-feeds the **Power → Connected Devices** section in GNOME Settings.
+(`org.bluez`, `org.freedesktop.DBus.ObjectManager`). This is the same source that
+feeds the **Power → Connected Devices** section in GNOME Settings. Only devices
+with `Connected = true` are shown, so stale duplicate pairings of the same
+device are ignored.
 
 > Generated with AI for personal use.
 > Do NOT upload to extensions.gnome.org (EGO) unless you understand JavaScript
@@ -23,8 +32,8 @@ feeds the **Power → Connected Devices** section in GNOME Settings.
 Runtime:
 
 - GNOME Shell 49
-- BlueZ exposing the mouse as `org.bluez.Device1` with `Icon = input-mouse` and
-  a `org.bluez.Battery1` battery
+- BlueZ exposing the devices as `org.bluez.Device1`, with the battery in
+  `org.bluez.Battery1` (devices without it are listed as "sin batería")
 
 Development only (used to test changes without logging out):
 
@@ -52,11 +61,23 @@ gnome-extensions enable bluetooth-mouse-battery@manuelamr
 - `extension.js` — entry point, only `enable()` / `disable()`.
 - `indicator.js` — panel indicator, menu and tooltip (Shell process UI).
 - `lib/bluez.js` — BlueZ D-Bus access, no UI imports.
+- `stylesheet.css` — low battery colour (`.bluetooth-battery-low`), loaded
+  automatically by GNOME Shell.
 - `tools/gnome-shell-dev` — launches a disposable nested GNOME Shell.
 - `tools/check-extension.sh` — loads the extension in a nested Shell and reports
   its state over D-Bus.
 
-Everything under `tools/` is development-only and is never loaded by GNOME Shell.
+Everything under `tools/` and `scripts/` is development-only and is never loaded
+by GNOME Shell.
+
+### Quick test in an ephemeral Shell
+
+```sh
+scripts/devkit.sh          # opens the devkit window and prints only extension-related log lines
+scripts/devkit.sh --check  # starts it headless, reports state/errors and exits (0 = ACTIVE)
+```
+
+The full log is kept in `${TMPDIR:-/tmp}/bluetooth-battery-devkit.log`.
 
 ## Development
 
@@ -197,8 +218,9 @@ G_MESSAGES_DEBUG=all tools/gnome-shell-dev
 
 #### Inspecting BlueZ
 
-The extension's only data source is BlueZ, so check it directly. The mouse is
-the `org.bluez.Device1` whose `Icon` is `input-mouse`:
+The extension's only data source is BlueZ, so check it directly. Every
+`org.bluez.Device1` with `Connected = true` is shown; its `Icon` selects the
+panel icon (`<Icon>-symbolic`, falling back to `bluetooth-symbolic`):
 
 ```sh
 busctl --system tree org.bluez
@@ -212,10 +234,10 @@ const r = Gio.DBus.system.call_sync("org.bluez", "/",
     null, null, Gio.DBusCallFlags.NONE, -1, null);
 for (const [path, ifaces] of Object.entries(r.recursiveUnpack()[0])) {
     const d = ifaces["org.bluez.Device1"];
-    if (!d || d.Icon !== "input-mouse")
+    if (!d)
         continue;
     const b = ifaces["org.bluez.Battery1"];
-    print(`${d.Alias} connected=${d.Connected} battery=${b?.Percentage ?? "?"}`);
+    print(`${d.Alias} icon=${d.Icon} connected=${d.Connected} battery=${b?.Percentage ?? "-"}`);
 }
 '
 ```
@@ -230,6 +252,10 @@ for (const [path, ifaces] of Object.entries(r.recursiveUnpack()[0])) {
   needs a new Shell process (the devkit counts).
 - **`state: 3` (ERROR)**: read the message with `GetExtensionErrors`, or run
   `tools/check-extension.sh`.
-- **Nothing in the panel**: confirm the mouse appears under
-  **Power → Connected Devices** in GNOME Settings, then re-run the BlueZ
-  snippet above.
+- **Only the Bluetooth icon in the panel**: no connected device reports a
+  battery. Confirm the device appears under **Power → Connected Devices** in
+  GNOME Settings, then re-run the BlueZ snippet above.
+- **A device shows as disconnected or is missing**: BlueZ may hold several
+  pairings of the same device (some devices change address when re-paired).
+  Only the connected one is shown; remove stale ones with
+  `bluetoothctl remove <MAC>`.

@@ -1,18 +1,23 @@
 # AGENTS.md
 
 Guidance for OpenCode when working in this repository. Deeper material lives in
-`README.md` (usage, development, debugging), `HANDOFF.md` (current state and
-next steps) and `GETTING-STARTED.md` (first run on a new machine).
+`README.md` (usage, development, debugging) and `GETTING-STARTED.md` (first run
+on a new machine).
 
 **On a machine where the extension is not set up yet**, follow
 `GETTING-STARTED.md` and run `tools/bootstrap.sh` before anything else.
 
 ## What this is
 
-A GNOME Shell 49 extension (uuid `bluetooth-mouse-battery@manuelamr`) that shows
-the connected Bluetooth mouse battery in the top panel: a mouse icon followed by
-the percentage, in the center box immediately left of the date/time. Device data
-comes from BlueZ over D-Bus.
+A GNOME Shell 49 extension (uuid `bluetooth-mouse-battery@manuelamr`, display
+name "Bluetooth Battery") that shows the battery of **every connected Bluetooth
+device** in the top panel: per device, an icon matching its BlueZ `Icon`
+followed by the percentage, in the center box immediately left of the
+date/time. Below 15% the device turns red and a red `battery-caution` icon is
+prepended to the indicator. Device data comes from BlueZ over D-Bus.
+
+The uuid and repository name still say "mouse" for historical reasons; changing
+the uuid would require reinstalling the extension, so keep it.
 
 ## Layout
 
@@ -20,6 +25,7 @@ comes from BlueZ over D-Bus.
 - `indicator.js` — panel indicator, menu and tooltip (Shell UI process).
 - `lib/bluez.js` — BlueZ D-Bus access. Must not import UI libraries (`St`,
   `Clutter`, `Gtk`, `Gdk`, `Adw`).
+- `stylesheet.css` — `.bluetooth-battery-low` (red), loaded automatically.
 - `tools/` — development helpers, never loaded by GNOME Shell.
 
 ## Verify changes
@@ -36,6 +42,8 @@ extension actually loads with the Mutter DevKit nested Shell:
 ```sh
 tools/gnome-shell-dev      # opens a nested GNOME Shell window; close it to stop
 tools/check-extension.sh   # headless; expects 'state': <1.0> (ACTIVE)
+scripts/devkit.sh          # nested Shell + filtered extension log (same as the other extensions)
+scripts/devkit.sh --check  # headless state + log check; exit 0 when ACTIVE
 ```
 
 ## Development constraints
@@ -68,9 +76,15 @@ tools/check-extension.sh   # headless; expects 'state': <1.0> (ACTIVE)
   `8=ACTIVATING`, `99=UNINSTALLED`.
 - The nested Shell runs on a private session bus, so `gdbus --session` does not
   reach it. Use `tools/check-extension.sh`.
-- BlueZ is the single source of truth (not UPower). The mouse is the
-  `org.bluez.Device1` whose `Icon == "input-mouse"`; battery comes from
-  `org.bluez.Battery1.Percentage`, name from `Alias`.
+- BlueZ is the single source of truth (not UPower). Every `org.bluez.Device1`
+  with `Connected = true` is shown; battery from
+  `org.bluez.Battery1.Percentage`, name from `Alias`, icon from
+  `<Icon>-symbolic` with `bluetooth-symbolic` as fallback.
+- BlueZ can hold several pairings of the same device (some change MAC when
+  re-paired); never pick "the first device of a type", always filter by
+  `Connected`.
+- `PopupImageMenuItem`'s icon is private (`_icon`); style the whole item, the
+  colour is inherited by the icon and label.
 
 ## Git
 

@@ -45,10 +45,10 @@ cd ~/.local/share/gnome-shell/extensions/bluetooth-mouse-battery@manuelamr
 opencode
 ```
 
-`AGENTS.md`, `HANDOFF.md`, `README.md` and the `gnome-extension-devkit` skill are
+`AGENTS.md`, `README.md` and the `gnome-extension-devkit` skill are
 loaded automatically. Paste this as the first prompt:
 
-> Read AGENTS.md, HANDOFF.md and README.md, then do the machine setup described
+> Read AGENTS.md and README.md, then do the machine setup described
 > in `GETTING-STARTED.md` section 4 by running `tools/bootstrap.sh`. Tell me
 > which steps need a manual action (sudo, logout, browser), then verify the
 > extension with `tools/check-extension.sh`.

@@ -11,46 +11,48 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
-import {BlueZClient, MOUSE_ICON} from './lib/bluez.js';
+import {BlueZClient} from './lib/bluez.js';
 
-const PANEL_ICON_NAME = 'input-mouse-symbolic';
-const NO_MOUSE_TEXT = 'Ningún ratón detectado';
-const CONNECTED_TEXT = 'Conectado';
-const DISCONNECTED_TEXT = 'Desconectado';
+const IDLE_ICON_NAME = 'bluetooth-active-symbolic';
+const FALLBACK_ICON_NAME = 'bluetooth-symbolic';
+const NO_DEVICES_TEXT = 'Ningún dispositivo Bluetooth conectado';
+const NO_BATTERY_TEXT = 'sin batería';
 const SETTINGS_TEXT = 'Abrir ajustes de Bluetooth';
 const SETTINGS_PANEL = 'bluetooth';
 const TOOLTIP_GAP = 6;
+const LOW_BATTERY_THRESHOLD = 15;
+const LOW_BATTERY_ICON_NAME = 'battery-caution-symbolic';
+const LOW_BATTERY_STYLE_CLASS = 'bluetooth-battery-low';
 
-export const MouseBatteryIndicator = GObject.registerClass({
-    GTypeName: 'MouseBatteryIndicator',
-}, class MouseBatteryIndicator extends Button {
+function isLowBattery(device) {
+    return device.percentage !== null && device.percentage < LOW_BATTERY_THRESHOLD;
+}
+
+function deviceIconName(device) {
+    return device.icon ? `${device.icon}-symbolic` : FALLBACK_ICON_NAME;
+}
+
+function batteryText(device) {
+    return device.percentage === null ? NO_BATTERY_TEXT : `${Math.round(device.percentage)}%`;
+}
+
+export const BluetoothBatteryIndicator = GObject.registerClass({
+    GTypeName: 'BluetoothBatteryIndicator',
+}, class BluetoothBatteryIndicator extends Button {
     _init() {
-        super._init(0.0, 'MouseBatteryIndicator');
+        super._init(0.0, 'BluetoothBatteryIndicator');
 
         this._client = new BlueZClient();
-        this._device = null;
+        this._devices = [];
 
-        this._icon = new St.Icon({
-            icon_name: PANEL_ICON_NAME,
-            style_class: 'system-status-icon',
-        });
-        this._label = new St.Label({
-            text: '',
-            y_align: Clutter.ActorAlign.CENTER,
-        });
+        this._box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
+        this.add_child(this._box);
 
-        const box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
-        box.add_child(this._icon);
-        box.add_child(this._label);
-        this.add_child(box);
-
-        this._nameItem = new PopupMenu.PopupMenuItem('', {reactive: false, can_focus: false});
-        this._stateItem = new PopupMenu.PopupMenuItem('', {reactive: false, can_focus: false});
+        this._devicesSection = new PopupMenu.PopupMenuSection();
         const settingsItem = new PopupMenu.PopupMenuItem(SETTINGS_TEXT);
         settingsItem.connect('activate', () => this._openSettings());
 
-        this.menu.addMenuItem(this._nameItem);
-        this.menu.addMenuItem(this._stateItem);
+        this.menu.addMenuItem(this._devicesSection);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(settingsItem);
 
@@ -70,32 +72,75 @@ export const MouseBatteryIndicator = GObject.registerClass({
     }
 
     _sync() {
-        this._device = this._client.listDevices().find(device => device.icon === MOUSE_ICON) ?? null;
-        this._updateUi();
+        this._devices = this._client.listDevices()
+            .filter(device => device.connected)
+            .sort((a, b) => a.name.localeCompare(b.name));
+        this._updatePanel();
+        this._updateMenu();
     }
 
-    _updateUi() {
-        if (this._device === null) {
-            this._label.text = '';
-            this._nameItem.label.text = NO_MOUSE_TEXT;
-            this._stateItem.visible = false;
+    _updatePanel() {
+        this._box.destroy_all_children();
+
+        const withBattery = this._devices.filter(device => device.percentage !== null);
+        if (withBattery.length === 0) {
+            this._box.add_child(new St.Icon({
+                icon_name: IDLE_ICON_NAME,
+                style_class: 'system-status-icon',
+            }));
             return;
         }
 
-        this._nameItem.label.text = this._device.name;
-        this._nameItem.visible = true;
-        this._stateItem.label.text = this._deviceStateText();
-        this._stateItem.visible = true;
-        this._label.text = this._device.connected && this._device.percentage !== null
-            ? `${Math.round(this._device.percentage)}%`
-            : '';
+        if (withBattery.some(isLowBattery)) {
+            this._box.add_child(new St.Icon({
+                icon_name: LOW_BATTERY_ICON_NAME,
+                style_class: `system-status-icon ${LOW_BATTERY_STYLE_CLASS}`,
+            }));
+        }
+
+        for (const device of withBattery) {
+            const icon = new St.Icon({
+                icon_name: deviceIconName(device),
+                fallback_icon_name: FALLBACK_ICON_NAME,
+                style_class: 'system-status-icon',
+            });
+            const label = new St.Label({
+                text: batteryText(device),
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            if (isLowBattery(device)) {
+                icon.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
+                label.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
+            }
+            this._box.add_child(icon);
+            this._box.add_child(label);
+        }
     }
 
-    _deviceStateText() {
-        if (!this._device.connected)
-            return DISCONNECTED_TEXT;
-        const percentage = this._device.percentage === null ? '' : ` · ${Math.round(this._device.percentage)}%`;
-        return `${CONNECTED_TEXT}${percentage}`;
+    _updateMenu() {
+        this._devicesSection.removeAll();
+
+        if (this._devices.length === 0) {
+            this._devicesSection.addMenuItem(
+                new PopupMenu.PopupMenuItem(NO_DEVICES_TEXT, {reactive: false, can_focus: false}));
+            return;
+        }
+
+        for (const device of this._devices) {
+            const item = new PopupMenu.PopupImageMenuItem(
+                `${device.name} · ${batteryText(device)}`,
+                deviceIconName(device),
+                {reactive: false, can_focus: false});
+            if (isLowBattery(device))
+                item.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
+            this._devicesSection.addMenuItem(item);
+        }
+    }
+
+    _tooltipText() {
+        if (this._devices.length === 0)
+            return NO_DEVICES_TEXT;
+        return this._devices.map(device => `${device.name} · ${batteryText(device)}`).join('\n');
     }
 
     _onHoverChanged() {
@@ -104,9 +149,7 @@ export const MouseBatteryIndicator = GObject.registerClass({
             return;
         }
 
-        this._tooltip.text = this._device === null
-            ? NO_MOUSE_TEXT
-            : `${this._device.name} · ${this._deviceStateText()}`;
+        this._tooltip.text = this._tooltipText();
         this._tooltip.show();
         this._positionTooltip();
     }

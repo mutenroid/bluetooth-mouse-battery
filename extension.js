@@ -5,11 +5,11 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {MouseBatteryIndicator} from './indicator.js';
+import {BluetoothBatteryIndicator} from './indicator.js';
 
-export default class MouseBatteryExtension extends Extension {
+export default class BluetoothBatteryExtension extends Extension {
     enable() {
-        this._indicator = new MouseBatteryIndicator();
+        this._indicator = new BluetoothBatteryIndicator();
 
         const {dateMenu} = Main.panel.statusArea;
         const position = dateMenu
