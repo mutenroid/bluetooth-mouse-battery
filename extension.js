@@ -9,7 +9,7 @@ import {BluetoothBatteryIndicator} from './indicator.js';
 
 export default class BluetoothBatteryExtension extends Extension {
     enable() {
-        this._indicator = new BluetoothBatteryIndicator();
+        this._indicator = new BluetoothBatteryIndicator(this);
 
         const {dateMenu} = Main.panel.statusArea;
         const position = dateMenu

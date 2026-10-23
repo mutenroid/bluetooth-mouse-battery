@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.bluetooth-battery" path="/org/gnome/shell/extensions/bluetooth-battery/">
+    <key name="low-battery-threshold" type="i">
+      <range min="1" max="100"/>
+      <default>15</default>
+      <summary>Low battery threshold</summary>
+      <description>Devices below this battery percentage are highlighted in red.</description>
+    </key>
+  </schema>
+</schemalist>

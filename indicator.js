@@ -18,15 +18,11 @@ const FALLBACK_ICON_NAME = 'bluetooth-symbolic';
 const NO_DEVICES_TEXT = 'Ningún dispositivo Bluetooth conectado';
 const NO_BATTERY_TEXT = 'sin batería';
 const SETTINGS_TEXT = 'Abrir ajustes de Bluetooth';
+const PREFERENCES_TEXT = 'Preferencias del widget';
 const SETTINGS_PANEL = 'bluetooth';
 const TOOLTIP_GAP = 6;
-const LOW_BATTERY_THRESHOLD = 15;
 const LOW_BATTERY_ICON_NAME = 'battery-caution-symbolic';
 const LOW_BATTERY_STYLE_CLASS = 'bluetooth-battery-low';
-
-function isLowBattery(device) {
-    return device.percentage !== null && device.percentage < LOW_BATTERY_THRESHOLD;
-}
 
 function deviceIconName(device) {
     return device.icon ? `${device.icon}-symbolic` : FALLBACK_ICON_NAME;
@@ -39,9 +35,11 @@ function batteryText(device) {
 export const BluetoothBatteryIndicator = GObject.registerClass({
     GTypeName: 'BluetoothBatteryIndicator',
 }, class BluetoothBatteryIndicator extends Button {
-    _init() {
+    _init(extension) {
         super._init(0.0, 'BluetoothBatteryIndicator');
 
+        this._extension = extension;
+        this._settings = extension.getSettings();
         this._client = new BlueZClient();
         this._devices = [];
 
@@ -51,10 +49,13 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
         this._devicesSection = new PopupMenu.PopupMenuSection();
         const settingsItem = new PopupMenu.PopupMenuItem(SETTINGS_TEXT);
         settingsItem.connect('activate', () => this._openSettings());
+        const preferencesItem = new PopupMenu.PopupMenuItem(PREFERENCES_TEXT);
+        preferencesItem.connect('activate', () => this._openPreferences());
 
         this.menu.addMenuItem(this._devicesSection);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(settingsItem);
+        this.menu.addMenuItem(preferencesItem);
 
         this._tooltip = new St.Label({style_class: 'dash-label', text: ''});
         this._tooltip.hide();
@@ -62,6 +63,7 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
 
         this._changedId = this._client.connect('changed', () => this._sync());
         this._devicesChangedId = this._client.connect('devices-changed', () => this._sync());
+        this._settingsChangedId = this._settings.connect('changed::low-battery-threshold', () => this._sync());
         this._hoverId = this.connect('notify::hover', () => this._onHoverChanged());
         this._menuOpenId = this.menu.connect('open-state-changed', (_menu, open) => {
             if (open)
@@ -69,6 +71,11 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
         });
 
         this._sync();
+    }
+
+    _isLowBattery(device) {
+        return device.percentage !== null &&
+            device.percentage < this._settings.get_int('low-battery-threshold');
     }
 
     _sync() {
@@ -91,7 +98,7 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
             return;
         }
 
-        if (withBattery.some(isLowBattery)) {
+        if (withBattery.some(device => this._isLowBattery(device))) {
             this._box.add_child(new St.Icon({
                 icon_name: LOW_BATTERY_ICON_NAME,
                 style_class: `system-status-icon ${LOW_BATTERY_STYLE_CLASS}`,
@@ -108,7 +115,7 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
                 text: batteryText(device),
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            if (isLowBattery(device)) {
+            if (this._isLowBattery(device)) {
                 icon.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
                 label.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
             }
@@ -131,7 +138,7 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
                 `${device.name} · ${batteryText(device)}`,
                 deviceIconName(device),
                 {reactive: false, can_focus: false});
-            if (isLowBattery(device))
+            if (this._isLowBattery(device))
                 item.add_style_class_name(LOW_BATTERY_STYLE_CLASS);
             this._devicesSection.addMenuItem(item);
         }
@@ -168,7 +175,16 @@ export const BluetoothBatteryIndicator = GObject.registerClass({
         this.menu.close();
     }
 
+    _openPreferences() {
+        this._extension.openPreferences();
+        this.menu.close();
+    }
+
     destroy() {
+        this._settings.disconnect(this._settingsChangedId);
+        this._settingsChangedId = 0;
+        this._settings = null;
+        this._extension = null;
         this.disconnect(this._hoverId);
         this._hoverId = 0;
         this.menu.disconnect(this._menuOpenId);

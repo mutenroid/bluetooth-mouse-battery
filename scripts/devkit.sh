@@ -9,12 +9,15 @@ set -eu
 
 UUID="bluetooth-mouse-battery@manuelamr"
 LOG_FILE="${TMPDIR:-/tmp}/bluetooth-battery-devkit.log"
-LOG_FILTER="$UUID|JS ERROR|JS WARNING|Unhandled promise|extension\.js|indicator\.js|bluez\.js"
+LOG_FILTER="$UUID|JS ERROR|JS WARNING|Unhandled promise|extension\.js|indicator\.js|bluez\.js|prefs\.js"
+EXTENSION_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [ ! -x /usr/libexec/mutter-devkit ]; then
     echo "mutter-devkit not found. Install it with: sudo dnf install -y mutter-devel" >&2
     exit 1
 fi
+
+glib-compile-schemas "$EXTENSION_DIR/schemas"
 
 if [ "${1:-}" != "--check" ]; then
     echo "Log: $LOG_FILE (close the devkit window to finish)"

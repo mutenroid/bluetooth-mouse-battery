@@ -1,2 +1,3 @@
 # Logs temporales de las herramientas de desarrollo
 *.log
+schemas/gschemas.compiled

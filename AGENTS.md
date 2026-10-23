@@ -13,7 +13,8 @@ A GNOME Shell 49 extension (uuid `bluetooth-mouse-battery@manuelamr`, display
 name "Bluetooth Battery") that shows the battery of **every connected Bluetooth
 device** in the top panel: per device, an icon matching its BlueZ `Icon`
 followed by the percentage, in the center box immediately left of the
-date/time. Below 15% the device turns red and a red `battery-caution` icon is
+date/time. Below the configured threshold (GSettings `low-battery-threshold`,
+default 15%) the device turns red and a red `battery-caution` icon is
 prepended to the indicator. Device data comes from BlueZ over D-Bus.
 
 The uuid and repository name still say "mouse" for historical reasons; changing
@@ -26,6 +27,12 @@ the uuid would require reinstalling the extension, so keep it.
 - `lib/bluez.js` — BlueZ D-Bus access. Must not import UI libraries (`St`,
   `Clutter`, `Gtk`, `Gdk`, `Adw`).
 - `stylesheet.css` — `.bluetooth-battery-low` (red), loaded automatically.
+- `prefs.js` — Adw preferences window (runs in the prefs process: no `St`,
+  `Clutter` or Shell imports).
+- `schemas/` — GSettings schema `org.gnome.shell.extensions.bluetooth-battery`
+  (declared in `metadata.json` → `settings-schema`, so use `getSettings()`
+  without arguments). `gschemas.compiled` is git-ignored; compile with
+  `glib-compile-schemas schemas` after editing the schema.
 - `tools/` — development helpers, never loaded by GNOME Shell.
 
 ## Verify changes

@@ -11,7 +11,7 @@ the left of the date/time.
 - **Click** it to open a menu with one row per connected device (icon, name and
   battery, or "sin batería" if the device does not report one) and an entry to
   open the Bluetooth settings panel.
-- **Low battery** (below 15%): the device icon and percentage turn red in the
+- **Low battery** (below 15% by default, configurable): the device icon and percentage turn red in the
   panel and in the menu, and a red `battery-caution` icon is shown at the start
   of the indicator so it stands out at a glance.
 - With no connected device reporting a battery, the panel shows only the
@@ -63,6 +63,26 @@ gnome-extensions enable bluetooth-mouse-battery@manuelamr
 - `lib/bluez.js` — BlueZ D-Bus access, no UI imports.
 - `stylesheet.css` — low battery colour (`.bluetooth-battery-low`), loaded
   automatically by GNOME Shell.
+- `prefs.js` — preferences window (low battery threshold).
+- `schemas/` — GSettings schema `org.gnome.shell.extensions.bluetooth-battery`.
+  `gschemas.compiled` is not committed: `tools/bootstrap.sh` and
+  `scripts/devkit.sh` compile it, or run `glib-compile-schemas schemas`.
+
+## Settings
+
+Open them from the indicator menu (**Preferencias del widget**) or with
+`gnome-extensions prefs bluetooth-mouse-battery@manuelamr`.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `low-battery-threshold` | `15` | Devices below this percentage (1–100) are shown in red |
+
+Changes apply immediately and are stored in dconf under
+`/org/gnome/shell/extensions/bluetooth-battery/`. From the terminal:
+
+```sh
+gsettings --schemadir schemas set org.gnome.shell.extensions.bluetooth-battery low-battery-threshold 20
+```
 - `tools/gnome-shell-dev` — launches a disposable nested GNOME Shell.
 - `tools/check-extension.sh` — loads the extension in a nested Shell and reports
   its state over D-Bus.

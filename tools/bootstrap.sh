@@ -70,6 +70,10 @@ else
     warn "gh not authenticated; run: gh auth login && gh auth setup-git"
 fi
 
+step "GSettings schema"
+glib-compile-schemas "$REPO_DIR/schemas"
+ok "compiled $REPO_DIR/schemas/gschemas.compiled"
+
 step "Manual next steps"
 printf '  1. gnome-extensions enable %s\n' "$UUID"
 printf '  2. Log out and back in once so the Shell scans the extension\n'
