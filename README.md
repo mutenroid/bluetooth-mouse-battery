@@ -37,7 +37,7 @@ Runtime:
 
 Development only (used to test changes without logging out):
 
-- `mutter-devel` (Fedora 43) or `mutter-devkit` (newer Fedora) — the Mutter
+- `mutter-devkit` (Fedora 44+) or `mutter-devel` (Fedora 43 and older) — the Mutter
   Development Kit viewer at `/usr/libexec/mutter-devkit`
 - `gdbus`, `busctl`, `python3` and `gjs`
 
@@ -127,12 +127,12 @@ fresh process, and a throwaway one, every time.
 
 #### Install the viewer
 
-On Fedora 43 `/usr/libexec/mutter-devkit` is shipped by `mutter-devel`; newer
-Fedora has a dedicated `mutter-devkit` package:
+Since Fedora 44 `/usr/libexec/mutter-devkit` ships in its own `mutter-devkit`
+package; on Fedora 43 and older it comes with `mutter-devel`:
 
 ```sh
-sudo dnf install mutter-devel     # Fedora 43
-sudo dnf install mutter-devkit    # newer Fedora
+sudo dnf install mutter-devkit    # Fedora 44+
+sudo dnf install mutter-devel     # Fedora 43 and older
 ```
 
 The launcher below checks for the binary and tells you if it is missing.

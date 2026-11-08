@@ -34,8 +34,8 @@ if [ -x /usr/libexec/mutter-devkit ]; then
     ok "/usr/libexec/mutter-devkit present"
 else
     warn "missing /usr/libexec/mutter-devkit"
-    warn "Fedora 43:    sudo dnf install mutter-devel"
-    warn "newer Fedora: sudo dnf install mutter-devkit"
+    warn "Fedora 44+:      sudo dnf install -y mutter-devkit"
+    warn "Fedora 43/older: sudo dnf install -y mutter-devel"
 fi
 
 step "gnome-shell-dev on PATH"

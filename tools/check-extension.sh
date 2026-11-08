@@ -13,7 +13,7 @@ EXT_DIR=$(dirname "$SCRIPT_DIR")
 UUID=${1:-$(python3 -c "import json; print(json.load(open('$EXT_DIR/metadata.json'))['uuid'])")}
 
 if [ ! -x /usr/libexec/mutter-devkit ]; then
-    echo "Falta /usr/libexec/mutter-devkit (paquete 'mutter-devel')." >&2
+    echo "Falta /usr/libexec/mutter-devkit (paquete 'mutter-devkit' en Fedora 44+, 'mutter-devel' en anteriores)." >&2
     exit 1
 fi
 

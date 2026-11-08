@@ -3,7 +3,8 @@
   "name": "Bluetooth Battery",
   "description": "Shows the battery level of every connected Bluetooth device in the top panel.",
   "shell-version": [
-    "49"
+    "49",
+    "50"
   ],
   "settings-schema": "org.gnome.shell.extensions.bluetooth-battery",
   "url": ""

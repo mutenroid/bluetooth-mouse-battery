@@ -21,8 +21,8 @@ Development Kit (`--devkit`).
 The viewer binary must exist at `/usr/libexec/mutter-devkit`:
 
 ```sh
-sudo dnf install mutter-devel     # Fedora 43 (provides /usr/libexec/mutter-devkit)
-sudo dnf install mutter-devkit    # newer Fedora
+sudo dnf install mutter-devkit    # Fedora 44+
+sudo dnf install mutter-devel     # Fedora 43 and older (also provides /usr/libexec/mutter-devkit)
 ```
 
 ## Run a nested Shell (reload without logging out)

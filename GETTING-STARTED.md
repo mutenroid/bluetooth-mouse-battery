@@ -89,5 +89,5 @@ tools/gnome-shell-dev        # nested Shell to test interactively
 | `git push` asks for username and password | No credential helper. Run `gh auth login && gh auth setup-git`, or use SSH. |
 | `fatal: destination path ... already exists` | A previous copy is there. Move it away first. |
 | Extension not in `gnome-extensions list` | The extensions directory is scanned at startup; log out and back in. |
-| `tools/gnome-shell-dev` says the viewer is missing | Install the DevKit viewer: `sudo dnf install mutter-devel` (Fedora 43) or `mutter-devkit` (newer Fedora). |
+| `tools/gnome-shell-dev` says the viewer is missing | Install the DevKit viewer: `sudo dnf install -y mutter-devkit` (Fedora 44+) or `mutter-devel` (Fedora 43 and older). |
 | Panel shows nothing | Check the mouse under **Power → Connected Devices** in GNOME Settings, and run the BlueZ snippet in `AGENTS.md`. |

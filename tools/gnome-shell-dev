@@ -14,8 +14,8 @@
 set -eu
 
 if [ ! -x /usr/libexec/mutter-devkit ]; then
-    echo "Falta /usr/libexec/mutter-devkit (paquete 'mutter-devel')." >&2
-    echo "Instálalo con:  sudo dnf install mutter-devel" >&2
+    echo "Falta /usr/libexec/mutter-devkit (paquete 'mutter-devkit' en Fedora 44+, 'mutter-devel' en anteriores)." >&2
+    echo "Instálalo con:  sudo dnf install -y mutter-devkit" >&2
     exit 1
 fi
 
