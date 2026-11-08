@@ -5,7 +5,7 @@ into the extensions path so GNOME Shell finds it, then open OpenCode inside it.
 
 ## 0. Prerequisites
 
-- Linux with **GNOME Shell 49** on a **Wayland** session
+- Linux with **GNOME Shell 49 or 50** on a **Wayland** session
 - `git` and network access; `gh` (GitHub CLI) only if you want to push
 - BlueZ with the mouse already **paired**
 

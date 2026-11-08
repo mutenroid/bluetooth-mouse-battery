@@ -31,7 +31,7 @@ device are ignored.
 
 Runtime:
 
-- GNOME Shell 49
+- GNOME Shell 49 or 50
 - BlueZ exposing the devices as `org.bluez.Device1`, with the battery in
   `org.bluez.Battery1` (devices without it are listed as "sin batería")
 
@@ -190,7 +190,7 @@ tools/check-extension.sh
 Healthy output contains `'state': <1.0>`, `'enabled': <true>` and
 `'error': <''>`, with `GetExtensionErrors` returning an empty array.
 
-`state` values (GNOME Shell 49, `js/misc/extensionUtils.js`):
+`state` values (GNOME Shell 49–50, `js/misc/extensionUtils.js`):
 
 | Value | State        | Meaning                        |
 |-------|--------------|--------------------------------|

@@ -9,7 +9,7 @@ on a new machine).
 
 ## What this is
 
-A GNOME Shell 49 extension (uuid `bluetooth-mouse-battery@manuelamr`, display
+A GNOME Shell 49–50 extension (uuid `bluetooth-mouse-battery@manuelamr`, display
 name "Bluetooth Battery") that shows the battery of **every connected Bluetooth
 device** in the top panel: per device, an icon matching its BlueZ `Icon`
 followed by the percentage, in the center box immediately left of the
@@ -58,9 +58,10 @@ scripts/devkit.sh --check  # headless state + log check; exit 0 when ACTIVE
 - **No hot reload.** GNOME Shell never unloads JavaScript, so a change needs a
   new `gnome-shell` process. On Wayland the Shell is the compositor, so iterate
   with the nested Shell (`tools/gnome-shell-dev`) instead of logging out.
-- Target **GNOME Shell 49 only** (`metadata.json` → `shell-version`). Do not add
-  multi-version shims, `typeof` guards or optional chaining for Shell APIs; the
-  APIs must not be called with optional chaining or `?.()`. Write for 49.
+- Target **GNOME Shell 49–50** (`metadata.json` → `shell-version`). The Shell
+  APIs used here are unchanged across those releases, so do not add multi-version
+  shims, `typeof` guards or optional chaining for Shell APIs; the APIs must not
+  be called with optional chaining or `?.()`.
 - Follow the GNOME extension best practices (load in the global instructions):
   no try/catch around calls that do not throw, no `_destroyed`/`_enabled` flags,
   each class owns and cleans its own resources, `destroy()` in order
@@ -71,14 +72,14 @@ scripts/devkit.sh --check  # headless state + log check; exit 0 when ACTIVE
 ## Conventions
 
 - User-facing strings are in Spanish (`Conectado`, `Desconectado`, …).
-- Verify Shell APIs against the GitLab `49.0` sources before using them; several
+- Verify Shell APIs against the sources of each targeted release before using them; several
   `Clutter.Actor` methods are not exposed through GObject Introspection.
 
 ## Known gotchas
 
 - `Clutter.Actor.get_index` is not exposed by GI. Use
   `actor.get_parent().get_children().indexOf(actor)`.
-- `ExtensionState` in GNOME 49: `1=ACTIVE` (healthy), `2=INACTIVE`, `3=ERROR`,
+- `ExtensionState` in GNOME 49–50: `1=ACTIVE` (healthy), `2=INACTIVE`, `3=ERROR`,
   `4=OUT_OF_DATE`, `5=DOWNLOADING`, `6=INITIALIZED`, `7=DEACTIVATING`,
   `8=ACTIVATING`, `99=UNINSTALLED`.
 - The nested Shell runs on a private session bus, so `gdbus --session` does not
